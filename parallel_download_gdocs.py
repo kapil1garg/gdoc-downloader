@@ -1,10 +1,15 @@
-# downloads N GDocs files in parallel and then terminates only when all
-# files have been downloaded
+"""
+This module downloads N GDocs files in parallel, terminating only when all files are downloaded.
 
-from gdoc2latex import download_to_file
-from multiprocessing import Process
+Author: Rob Miller
+Other contributors: Jeff Bigham, Philip Guo
+"""
+
 import sys
 import getpass
+
+from multiprocessing import Process
+from gdoc2latex import download_to_file
 
 files = [
   ('https://docs.google.com/document/d/1XhnvsR9uje1m0mu-RvJ9_ZtsqnsqO1NgtHm9c2MKi0A/edit', 'paper.tex'),
@@ -13,12 +18,12 @@ files = [
 ]
 
 if len(sys.argv) < 2:
-	email=""
-	password=""
+    email = ''
+    password = ''
 else:
-	email=sys.argv[1]
-	password=getpass.getpass()
+    email = sys.argv[1]
+    password = getpass.getpass()
 
-for tup in files:# spawn a new process 
-	Process(target=download_to_file, args=tup+(email,password)).start()
-
+# spawn a new process and download each file
+for tup in files:
+    Process(target=download_to_file, args=tup+(email, password)).start()
