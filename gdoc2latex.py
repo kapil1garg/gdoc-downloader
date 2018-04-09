@@ -10,16 +10,26 @@ This script is used to download and clean a Google Doc with LaTeX code in prepar
 Author: Rob Miller
 Other contributors: Jeff Bigham, Philip Guo
 """
+# Python 2/3 support
+from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import chr
+
+# imports
 import getpass
 import json
 import re
 import sys
-import urllib
-import urllib2
 
-from HTMLParser import HTMLParser, HTMLParseError
-from htmlentitydefs import name2codepoint
+import urllib.request
+import urllib.parse
+import urllib.error
+
+from html.parser import HTMLParser
+from html.entities import name2codepoint
 
 
 def main():
@@ -27,13 +37,13 @@ def main():
     Takes URL from user input, downloads/cleans Google Doc, and prints it to standard out.
     """
     if len(sys.argv) < 2:
-        print >>sys.stderr, """
+        print("""
 Usage: python gdoc2latex.py <URL or .gdoc filename>
 
      example: python gdoc2latex.py https://docs.google.com/document/d/1yEyXxtEeQ5_E7PibjYpofPC6kP4jMG-EieKhwkK7oQE/edit
      example: python gdoc2latex.py test.gdoc
      example for private documents: python gdoc2latex.py https://docs.google.com/document/d/1yEyXxtEeQ5_E7PibjYpofPC6kP4jMG-EieKhwkK7oQE/edit USERNAME
-"""
+""", file=sys.stderr)
         sys.exit(1)
 
     if len(sys.argv) == 2:
@@ -57,14 +67,14 @@ def download_to_file(gdoc_url, out_filename, email='', password=''):
     :param password: optional string password for private documents
     :return:
     """
-    print 'Downloading {doc_url}...'.format(doc_url=gdoc_url)
+    print('Downloading {doc_url}...'.format(doc_url=gdoc_url))
     html = fetch_google_doc(gdoc_url, email, password)
     text = html_to_text(html)
     latex = unicode_to_latex(text)
 
     with open(out_filename, 'w') as f:
         f.write(latex)
-    print 'Wrote {doc_url} to {output_file}.'.format(doc_url=gdoc_url, output_file=out_filename)
+    print('Wrote {doc_url} to {output_file}.'.format(doc_url=gdoc_url, output_file=out_filename))
 
 
 def get_auth_token(email, password, source, service='wise'):
@@ -85,8 +95,8 @@ def get_auth_token(email, password, source, service='wise'):
         'accountType': "HOSTED_OR_GOOGLE",
         'source': source
     }
-    req = urllib2.Request(url, urllib.urlencode(params))
-    return re.findall(r"Auth=(.*)", urllib2.urlopen(req).read())[0]
+    req = urllib.request.Request(url, urllib.parse.urlencode(params))
+    return re.findall(r"Auth=(.*)", urllib.request.urlopen(req).read())[0]
 
 
 def fetch_google_doc(url_or_gdoc_file, email='', password=''):
@@ -127,10 +137,10 @@ def fetch_google_doc(url_or_gdoc_file, email='', password=''):
             "Authorization": "GoogleLogin auth=" + get_auth_token(email, password, "gdoc2latex.py"),
             "GData-Version": "3.0"
         }
-        req = urllib2.Request(export_url, headers=headers)
-        conn = urllib2.urlopen(req)
+        req = urllib.request.Request(export_url, headers=headers)
+        conn = urllib.request.urlopen(req)
     else:
-        conn = urllib2.urlopen(export_url)
+        conn = urllib.request.urlopen(export_url)
         if "ServiceLogin" in conn.geturl():  # we were redirected to a login -- doc isn't publicly viewable
             raise Exception(
                 """
@@ -144,7 +154,7 @@ def fetch_google_doc(url_or_gdoc_file, email='', password=''):
     # download the html
     raw = conn.read()
     encoding = conn.headers['content-type'].split('charset=')[-1]
-    html = unicode(raw, encoding)
+    html = str(raw, encoding)
     conn.close()
     return html
 
@@ -171,7 +181,7 @@ def html_to_text(html):
     try:
         parser.feed(html)
         parser.close()
-    except HTMLParseError:
+    except Exception:
         pass
     return parser.get_text()
 
@@ -218,12 +228,12 @@ class _HTMLToText(HTMLParser):
 
     def handle_entityref(self, name):
         if name in name2codepoint:
-            c = unichr(name2codepoint[name])
+            c = chr(name2codepoint[name])
             self.append(c)
 
     def handle_charref(self, name):
         n = int(name[1:], 16) if name.startswith('x') else int(name)
-        self.append(unichr(n))
+        self.append(chr(n))
 
     def append(self, string):
         if self.hide_output_nesting_level == 0:
@@ -253,9 +263,10 @@ def unicode_to_latex(text):
         (u'\u2026', "..."),
         (u'\xa0', ' ')  # no-break space
     ]
+
     for a, b in unicode_replacement_tuples:
         text = text.replace(a, b)
-    return text.encode('utf8')
+    return text
 
 
 if __name__ == '__main__':

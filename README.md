@@ -5,6 +5,13 @@ gdoc-downloader
 (with LaTeX markup), which enables collaborative workflows. For example, co-authors
 can simultaneously edit the same LaTeX files without fear of merge conflicts.
 
+### Installation
+`gdoc2latex.py` supports both Python 2 and 3.x. In order to make the code compatible, however, you will need to download the [future](http://python-future.org/) library.
+
+This is most easily done by:
+```
+pip install future
+``` 
 
 ### Basic usage
 
