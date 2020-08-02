@@ -15,6 +15,7 @@ from __future__ import print_function
 
 from future import standard_library
 standard_library.install_aliases()
+
 from builtins import str
 from builtins import chr
 
@@ -67,13 +68,18 @@ def download_to_file(gdoc_url, out_filename, email='', password=''):
     :param password: optional string password for private documents
     :return:
     """
+    # download file as html
     print('Downloading {doc_url}...'.format(doc_url=gdoc_url))
     html = fetch_google_doc(gdoc_url, email, password)
+
+    # parse html into latex
     text = html_to_text(html)
     latex = unicode_to_latex(text)
 
+    # write out latex
     with open(out_filename, 'w') as f:
         f.write(latex)
+
     print('Wrote {doc_url} to {output_file}.'.format(doc_url=gdoc_url, output_file=out_filename))
 
 
@@ -200,7 +206,7 @@ class _HTMLToText(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         # convert attrs tuples into dictionary
-        attrs_dict = dict((y, x) for x, y in attrs)
+        attrs_dict = {x: y for x, y in attrs}
 
         if tag in ['script', 'style', 'head']:
             self.hide_output_nesting_level = 1
@@ -209,6 +215,7 @@ class _HTMLToText(HTMLParser):
             self.hide_output_nesting_level = 1
         elif self.hide_output_nesting_level > 0:
             self.hide_output_nesting_level += 1
+
         if tag in ('p', 'br') and not self.at_start_of_line():
             self.append('\n')
 
